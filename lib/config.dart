@@ -2,31 +2,35 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:get/get.dart';
-import 'package:vrc_config/config_manager.dart';
 
 class Config extends GetxController {
-  final File configFile;
+  static final configPath =
+      '${Platform.environment['LocalAppData']!}Low/VRChat/vrchat';
+  final File configFile = File('$configPath/config.json');
+
   late Map<String, dynamic> _configData;
 
   final Rx<String> cacheDir = ''.obs;
   final Rx<int> cacheSize = 0.obs;
   final Rx<int> cacheExpiry = 0.obs;
 
-  Config(this.configFile) {
+  Config() {
     read();
-    cacheDir.value =
-        _configData['cache_directory'] ?? ConfigManager.defaultConfigPath;
+    cacheDir.value = _configData['cache_directory'] ?? configPath;
     cacheSize.value = _configData['cache_size'] ?? 20;
     cacheExpiry.value = _configData['cache_expiry_delay'] ?? 30;
   }
 
-  String get path => configFile.path;
-
-  bool get exists => configFile.existsSync();
+  final RxBool _exists = false.obs;
+  RxBool get exists {
+    _exists.value = configFile.existsSync();
+    return _exists;
+  }
 
   void read() {
     if (!configFile.existsSync()) {
       _configData = {};
+      save();
       return;
     }
     final configRaw = configFile.readAsStringSync();

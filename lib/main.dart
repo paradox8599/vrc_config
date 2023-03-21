@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:vrc_config/config_manager.dart';
+import 'package:vrc_config/config.dart';
 import 'package:vrc_config/home_page.dart';
 import 'package:vrc_config/tr.dart';
 import 'package:window_manager/window_manager.dart';
@@ -12,13 +12,14 @@ void main() async {
 
 Future<void> init() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Get.put(ConfigManager());
+  Get.put(Config());
 
   await windowManager.ensureInitialized();
+  const size = Size(600, 400);
   const windowOptions = WindowOptions(
     title: 'VRC Config',
-    size: Size(600, 450),
-    minimumSize: Size(600, 450),
+    size: size,
+    minimumSize: size,
     center: true,
   );
   windowManager.waitUntilReadyToShow(windowOptions, () async {

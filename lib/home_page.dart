@@ -6,13 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:universal_disk_space/universal_disk_space.dart';
 import 'package:vrc_config/config.dart';
-import 'package:vrc_config/config_manager.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  ConfigManager get configMan => Get.find<ConfigManager>();
-  Rx<Config> get config => configMan.config;
+  Config get config => Get.find<Config>();
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +43,7 @@ class HomePage extends StatelessWidget {
                 final result = turns.value % (ms * loops) != 0;
                 return result;
               });
-              configMan.reloadConfig();
+              // TODO: reload
             },
             icon: Obx(
               () => AnimatedRotation(
@@ -62,30 +60,9 @@ class HomePage extends StatelessWidget {
           padding: const EdgeInsets.all(8.0),
           child: Column(
             children: [
-              // config path
-
-              Card(
-                child: Column(
-                  children: [
-                    ListTile(
-                      leading: Text('config_path'.tr),
-                      title: Obx(
-                        () => config.value.exists
-                            ? Text(config.value.path)
-                            : Text('config_not_found'.tr),
-                      ),
-                      trailing: ElevatedButton(
-                        onPressed: _chooseConfigPath,
-                        child: Text('choose'.tr),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
               // Cache configs
 
-              Obx(() => config.value.exists ? cacheCard() : Container()),
+              Obx(() => config.exists.value ? cacheCard() : Container()),
 
               // Other settings...
             ],
@@ -106,36 +83,37 @@ class HomePage extends StatelessWidget {
 
         ListTile(
           leading: Text('cache_dir'.tr),
-          title: Row(
-            children: [
-              Obx(() => Text(config.value.cacheDir.value)),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-              ),
-              Obx(() {
-                final sizeDiff = diskSpace.value - config.value.cacheSize.value;
-                return Text('($diskSpace GB)',
-                    style: TextStyle(
-                      color: sizeDiff < 10
-                          ? Colors.red
-                          : sizeDiff < config.value.cacheSize.value * 0.5
-                              ? Colors.yellow
-                              : Colors.black,
-                    ));
-              })
-            ],
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+          title: Obx(() {
+            return Wrap(
+              children: [
+                Text(config.cacheDir.value),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8.0),
+                ),
+                () {
+                  final sizeDiff = diskSpace.value - config.cacheSize.value;
+                  return Text('($diskSpace GB)',
+                      style: TextStyle(
+                        color: sizeDiff < 10
+                            ? Colors.red
+                            : sizeDiff < config.cacheSize.value * 0.5
+                                ? Colors.yellow
+                                : Colors.black,
+                      ));
+                }()
+              ],
+            );
+          }),
+          trailing: Wrap(
             children: [
               ElevatedButton(
                 child: Text('copy'.tr),
                 onPressed: () async {
                   await Clipboard.setData(
-                      ClipboardData(text: config.value.cacheDir.value));
+                      ClipboardData(text: config.cacheDir.value));
                   Get.rawSnackbar(
                     title: 'copied'.tr,
-                    message: config.value.cacheDir.value,
+                    message: config.cacheDir.value,
                   );
                 },
               ),
@@ -154,9 +132,8 @@ class HomePage extends StatelessWidget {
 
         ListTile(
           leading: Text('cache_size'.tr),
-          title: Obx(() => Text('${config.value.cacheSize.value} GB')),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+          title: Obx(() => Text('${config.cacheSize.value} GB')),
+          trailing: Wrap(
             children: [
               ElevatedButton(
                 onPressed: _clearCache,
@@ -178,7 +155,7 @@ class HomePage extends StatelessWidget {
         ListTile(
           leading: Text('cache_expiry'.tr),
           title: Obx(() => Text(
-              '${config.value.cacheExpiry} ${config.value.cacheExpiry.value > 1 ? 'days'.tr : 'day'.tr}')),
+              '${config.cacheExpiry} ${config.cacheExpiry.value > 1 ? 'days'.tr : 'day'.tr}')),
           trailing: ElevatedButton(
             onPressed: _editCacheExpiry,
             child: Text('edit'.tr),
@@ -193,7 +170,7 @@ class HomePage extends StatelessWidget {
         child: Column(
           children: [
             ListTile(
-              title: Row(
+              title: Wrap(
                 children: [
                   Text(title),
                   const Padding(
@@ -208,23 +185,13 @@ class HomePage extends StatelessWidget {
         ),
       );
 
-  Future<void> _chooseConfigPath() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['json'],
-    );
-    PlatformFile? file = result?.files.single;
-    if (file == null) return;
-    configMan.setConfigPath(file.path!);
-  }
-
   Future<void> _chooseCachePath() async {
-    String oldPath = config.value.cacheDir.value;
+    String oldPath = config.cacheDir.value;
     String? result = await FilePicker.platform.getDirectoryPath();
     if (result == null) return;
     Directory dir = Directory(result);
     if (!dir.existsSync()) return;
-    config.value.setCacheDirectory(dir.path);
+    config.setCacheDirectory(dir.path);
     // prompt for moving files
     // TODO: move files
     // await Get.defaultDialog(
@@ -243,7 +210,7 @@ class HomePage extends StatelessWidget {
     final diskSpace = DiskSpace();
     await diskSpace.scan();
     final space = diskSpace.disks
-        .where((d) => config.value.cacheDir.value.startsWith(d.devicePath));
+        .where((d) => config.cacheDir.value.startsWith(d.devicePath));
     driveSpace.value =
         space.isEmpty ? 0 : space.first.availableSpace ~/ 1024 ~/ 1024 ~/ 1024;
   }
@@ -255,13 +222,12 @@ class HomePage extends StatelessWidget {
       content: Column(
         children: [
           Text('clear_cache_confirm'.tr),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
             children: [
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8.0),
               ),
-              Text(config.value.cacheDir.value),
+              Text(config.cacheDir.value),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8.0),
               ),
@@ -281,7 +247,7 @@ class HomePage extends StatelessWidget {
       textConfirm: 'clear'.tr,
       textCancel: 'cancel'.tr,
       onConfirm: () async {
-        final dir = Directory(config.value.cacheDir.value);
+        final dir = Directory(config.cacheDir.value);
         show.value = true;
         try {
           final cacheDir = Directory('${dir.path}\\Cache-WindowsPlayer');
@@ -297,19 +263,19 @@ class HomePage extends StatelessWidget {
   Future<void> _editCacheSize() async {
     final size = await _numberInputDialog(
       'cache_size'.tr,
-      initVal: config.value.cacheSize.value,
+      initVal: config.cacheSize.value,
       unit: 'GB',
     );
-    config.value.setCacheSize(size);
+    config.setCacheSize(size);
   }
 
   Future<void> _editCacheExpiry() async {
     final days = await _numberInputDialog(
       'cache_expiry'.tr,
-      initVal: config.value.cacheExpiry.value,
+      initVal: config.cacheExpiry.value,
       unit: 'days'.tr,
     );
-    config.value.setCacheExpiry(days);
+    config.setCacheExpiry(days);
   }
 
   Future<int> _numberInputDialog(String title,
