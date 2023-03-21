@@ -26,6 +26,7 @@ class Tr extends Translations {
           'move_cache_confirm': '是否移动缓存文件到新位置？',
           'copied': '已复制到剪贴板',
           'copy': '复制',
+          'no_game': '游戏配置路径不存在',
         },
         'en': {
           'title': 'VRChat Configs',
@@ -50,6 +51,7 @@ class Tr extends Translations {
           'move_cache_confirm': 'Do you want to move cache to new location?',
           'copied': 'Copied to clipboard',
           'copy': 'Copy',
+          'no_game': 'Game config path not found',
         }
       };
 }

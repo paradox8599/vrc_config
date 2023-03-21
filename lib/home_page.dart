@@ -43,7 +43,7 @@ class HomePage extends StatelessWidget {
                 final result = turns.value % (ms * loops) != 0;
                 return result;
               });
-              // TODO: reload
+              config.read();
             },
             icon: Obx(
               () => AnimatedRotation(
@@ -62,7 +62,9 @@ class HomePage extends StatelessWidget {
             children: [
               // Cache configs
 
-              Obx(() => config.exists.value ? cacheCard() : Container()),
+              Obx(() => config.dirExists.value
+                  ? cacheCard()
+                  : Center(child: Text('no_game'.tr))),
 
               // Other settings...
             ],
