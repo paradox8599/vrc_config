@@ -19,6 +19,7 @@ Future<void> init() async {
     title: 'VRC Config',
     size: Size(600, 450),
     minimumSize: Size(600, 450),
+    center: true,
   );
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();
