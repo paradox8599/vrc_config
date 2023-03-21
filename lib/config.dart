@@ -34,15 +34,13 @@ class Config extends GetxController {
     if (!dirExists.value) return;
     if (!configFile.existsSync()) {
       _configData = {};
-      save();
-      return;
     } else {
       final configRaw = configFile.readAsStringSync();
       _configData = jsonDecode(configRaw);
-      cacheDir.value = _configData['cache_directory'] ?? configPath;
-      cacheSize.value = _configData['cache_size'] ?? 20;
-      cacheExpiry.value = _configData['cache_expiry_delay'] ?? 30;
     }
+    setCacheDirectory(_configData['cache_directory'] ?? configPath);
+    setCacheSize(_configData['cache_size'] ?? 20);
+    setCacheExpiry(_configData['cache_expiry_delay'] ?? 30);
   }
 
   void save() {
