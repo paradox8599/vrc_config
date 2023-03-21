@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:universal_disk_space/universal_disk_space.dart';
 import 'package:vrc_config/config.dart';
@@ -15,9 +16,6 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Rx<int> diskSpace = 0.obs;
-    Get.put(diskSpace, tag: 'diskSpace');
-    _getDiskSpace(diskSpace);
     Rx<int> turns = 0.obs;
 
     return Scaffold(
@@ -74,74 +72,107 @@ class HomePage extends StatelessWidget {
 
               // Cache configs
 
-              configCard(
-                'cache'.tr,
-                action: ElevatedButton(
-                  onPressed: () {},
-                  child: Text('clear'.tr),
-                ),
-                [
-                  // cache directory
+              Obx(() => config.value.exists ? cacheCard() : Container()),
 
-                  ListTile(
-                    leading: Text('cache_dir'.tr),
-                    title: Row(
-                      children: [
-                        Obx(() => Text(config.value.cacheDir.value)),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8.0),
-                        ),
-                        Obx(() {
-                          final sizeDiff =
-                              diskSpace.value - config.value.cacheSize.value;
-                          return Text('($diskSpace GB)',
-                              style: TextStyle(
-                                color: sizeDiff < 10
-                                    ? Colors.red
-                                    : sizeDiff <
-                                            config.value.cacheSize.value * 0.5
-                                        ? Colors.yellow
-                                        : Colors.black,
-                              ));
-                        })
-                      ],
-                    ),
-                    trailing: ElevatedButton(
-                      onPressed: _chooseCachePath,
-                      child: Text('move'.tr),
-                    ),
-                  ),
-
-                  // Size
-
-                  ListTile(
-                    leading: Text('cache_size'.tr),
-                    title:
-                        Obx(() => Text('${config.value.cacheSize.value} GB')),
-                    trailing: ElevatedButton(
-                      onPressed: _editCacheSize,
-                      child: Text('edit'.tr),
-                    ),
-                  ),
-
-                  // Expiry
-
-                  ListTile(
-                    leading: Text('cache_expiry'.tr),
-                    title: Obx(() => Text(
-                        '${config.value.cacheExpiry} ${config.value.cacheExpiry.value > 1 ? 'days'.tr : 'day'.tr}')),
-                    trailing: ElevatedButton(
-                      onPressed: _editCacheExpiry,
-                      child: Text('edit'.tr),
-                    ),
-                  ),
-                ],
-              ),
               // Other settings...
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget cacheCard() {
+    final Rx<int> diskSpace = 0.obs;
+    Get.put(diskSpace, tag: 'diskSpace');
+    _getDiskSpace(diskSpace);
+    return configCard(
+      'cache'.tr,
+      [
+        // cache directory
+
+        ListTile(
+          leading: Text('cache_dir'.tr),
+          title: Row(
+            children: [
+              Obx(() => Text(config.value.cacheDir.value)),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.0),
+              ),
+              Obx(() {
+                final sizeDiff = diskSpace.value - config.value.cacheSize.value;
+                return Text('($diskSpace GB)',
+                    style: TextStyle(
+                      color: sizeDiff < 10
+                          ? Colors.red
+                          : sizeDiff < config.value.cacheSize.value * 0.5
+                              ? Colors.yellow
+                              : Colors.black,
+                    ));
+              })
+            ],
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton(
+                child: Text('copy'.tr),
+                onPressed: () async {
+                  await Clipboard.setData(
+                      ClipboardData(text: config.value.cacheDir.value));
+                  Get.snackbar(
+                    'copied'.tr,
+                    config.value.cacheDir.value,
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                },
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.0),
+              ),
+              ElevatedButton(
+                onPressed: _chooseCachePath,
+                child: Text('edit'.tr),
+              ),
+            ],
+          ),
+        ),
+
+        // Size
+
+        ListTile(
+          leading: Text('cache_size'.tr),
+          title: Obx(() => Text('${config.value.cacheSize.value} GB')),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton(
+                onPressed: _clearCache,
+                child: Text('clear'.tr),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.0),
+              ),
+              ElevatedButton(
+                onPressed: _editCacheSize,
+                child: Text('edit'.tr),
+              ),
+            ],
+          ),
+        ),
+
+        // Expiry
+
+        ListTile(
+          leading: Text('cache_expiry'.tr),
+          title: Obx(() => Text(
+              '${config.value.cacheExpiry} ${config.value.cacheExpiry.value > 1 ? 'days'.tr : 'day'.tr}')),
+          trailing: ElevatedButton(
+            onPressed: _editCacheExpiry,
+            child: Text('edit'.tr),
+          ),
+        ),
+      ],
     );
   }
 
@@ -176,11 +207,23 @@ class HomePage extends StatelessWidget {
   }
 
   Future<void> _chooseCachePath() async {
+    String oldPath = config.value.cacheDir.value;
     String? result = await FilePicker.platform.getDirectoryPath();
     if (result == null) return;
     Directory dir = Directory(result);
     if (!dir.existsSync()) return;
     config.value.setCacheDirectory(dir.path);
+    // prompt for moving files
+    // TODO: move files
+    // await Get.defaultDialog(
+    //   title: 'move_cache'.tr,
+    //   content: Text('move_cache_confirm'.tr),
+    //   textConfirm: 'move'.tr,
+    //   textCancel: 'cancel'.tr,
+    //   onConfirm: () {
+    //     Get.back();
+    //   },
+    // );
     _getDiskSpace(Get.find(tag: 'diskSpace'));
   }
 
@@ -193,7 +236,51 @@ class HomePage extends StatelessWidget {
         space.isEmpty ? 0 : space.first.availableSpace ~/ 1024 ~/ 1024 ~/ 1024;
   }
 
-  void _clearCache() {}
+  void _clearCache() {
+    Rx<bool> show = false.obs;
+    Get.defaultDialog(
+      title: 'clear_cache'.tr,
+      content: Column(
+        children: [
+          Text('clear_cache_confirm'.tr),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.0),
+              ),
+              Text(config.value.cacheDir.value),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.0),
+              ),
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: Obx(
+                  () => show.value
+                      ? const CircularProgressIndicator(strokeWidth: 2)
+                      : const SizedBox(),
+                ),
+              )
+            ],
+          ),
+        ],
+      ),
+      textConfirm: 'clear'.tr,
+      textCancel: 'cancel'.tr,
+      onConfirm: () async {
+        final dir = Directory(config.value.cacheDir.value);
+        show.value = true;
+        try {
+          final cacheDir = Directory('${dir.path}\\Cache-WindowsPlayer');
+          cacheDir.deleteSync(recursive: true);
+          // ignore: empty_catches
+        } catch (e) {}
+        await Future.delayed(const Duration(milliseconds: 500));
+        Get.back();
+      },
+    );
+  }
 
   Future<void> _editCacheSize() async {
     final size = await _numberInputDialog(

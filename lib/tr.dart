@@ -20,6 +20,12 @@ class Tr extends Translations {
           'move': '移动',
           'confirm': '确认',
           'cancel': '取消',
+          'clear_cache': '清除缓存',
+          'clear_cache_confirm': '确定要清除缓存吗？',
+          'move_cache': '移动缓存',
+          'move_cache_confirm': '是否移动缓存文件到新位置？',
+          'copied': '已复制到剪贴板',
+          'copy': '复制',
         },
         'en': {
           'title': 'VRChat Configs',
@@ -38,6 +44,12 @@ class Tr extends Translations {
           'move': 'Move',
           'confirm': 'Confirm',
           'cancel': 'Cancel',
+          'clear_cache': 'Clear Cache',
+          'clear_cache_confirm': 'Are you sure to clear cache?',
+          'move_cache': 'Move Cache',
+          'move_cache_confirm': 'Do you want to move cache to new location?',
+          'copied': 'Copied to clipboard',
+          'copy': 'Copy',
         }
       };
 }
