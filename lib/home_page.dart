@@ -22,6 +22,19 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: Text('title'.tr),
         actions: [
+          Row(
+            children: [
+              const Text('English'),
+              Switch(
+                value: Get.locale!.languageCode == 'zh',
+                onChanged: (value) {
+                  Get.updateLocale(
+                      value ? const Locale('zh') : const Locale('en'));
+                },
+              ),
+              const Text('中文'),
+            ],
+          ),
           IconButton(
             onPressed: () {
               Future.doWhile(() async {
@@ -120,10 +133,9 @@ class HomePage extends StatelessWidget {
                 onPressed: () async {
                   await Clipboard.setData(
                       ClipboardData(text: config.value.cacheDir.value));
-                  Get.snackbar(
-                    'copied'.tr,
-                    config.value.cacheDir.value,
-                    snackPosition: SnackPosition.BOTTOM,
+                  Get.rawSnackbar(
+                    title: 'copied'.tr,
+                    message: config.value.cacheDir.value,
                   );
                 },
               ),

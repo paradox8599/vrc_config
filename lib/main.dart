@@ -17,8 +17,8 @@ Future<void> init() async {
   await windowManager.ensureInitialized();
   const windowOptions = WindowOptions(
     title: 'VRC Config',
-    size: Size(600, 400),
-    minimumSize: Size(600, 400),
+    size: Size(600, 450),
+    minimumSize: Size(600, 450),
   );
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();
