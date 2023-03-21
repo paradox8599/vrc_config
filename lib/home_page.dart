@@ -18,6 +18,7 @@ class HomePage extends StatelessWidget {
     final Rx<int> diskSpace = 0.obs;
     Get.put(diskSpace, tag: 'diskSpace');
     _getDiskSpace(diskSpace);
+    Rx<int> turns = 0.obs;
 
     return Scaffold(
       appBar: AppBar(
@@ -25,9 +26,23 @@ class HomePage extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () {
+              Future.doWhile(() async {
+                const ms = 100;
+                const loops = 3;
+                turns.value += 100;
+                await Future.delayed(const Duration(milliseconds: ms));
+                final result = turns.value % (ms * loops) != 0;
+                return result;
+              });
               configMan.reloadConfig();
             },
-            icon: const Icon(Icons.refresh),
+            icon: Obx(
+              () => AnimatedRotation(
+                turns: turns.value / 100,
+                duration: const Duration(milliseconds: 300),
+                child: const Icon(Icons.refresh),
+              ),
+            ),
           ),
         ],
       ),
