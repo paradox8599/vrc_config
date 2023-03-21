@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:vrc_config/config_manager.dart';
 import 'package:vrc_config/home_page.dart';
 import 'package:vrc_config/tr.dart';
+import 'package:window_manager/window_manager.dart';
 
 void main() async {
   await init();
@@ -12,6 +13,17 @@ void main() async {
 Future<void> init() async {
   WidgetsFlutterBinding.ensureInitialized();
   Get.put(ConfigManager());
+
+  await windowManager.ensureInitialized();
+  const windowOptions = WindowOptions(
+    title: 'VRC Config',
+    size: Size(600, 400),
+    minimumSize: Size(600, 400),
+  );
+  windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.show();
+    await windowManager.focus();
+  });
 }
 
 class VRCConfigApp extends StatelessWidget {
