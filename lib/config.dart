@@ -1,12 +1,23 @@
 import 'dart:convert';
 import 'dart:io';
 
-class Config {
+import 'package:get/get.dart';
+import 'package:vrc_config/config_manager.dart';
+
+class Config extends GetxController {
   final File configFile;
-  late final Map<String, dynamic> _configData;
+  late Map<String, dynamic> _configData;
+
+  final Rx<String> cacheDir = ''.obs;
+  final Rx<int> cacheSize = 0.obs;
+  final Rx<int> cacheExpiry = 0.obs;
 
   Config(this.configFile) {
     read();
+    cacheDir.value =
+        _configData['cache_directory'] ?? ConfigManager.defaultConfigPath;
+    cacheSize.value = _configData['cache_size'] ?? 20;
+    cacheExpiry.value = _configData['cache_expiry_delay'] ?? 30;
   }
 
   String get path => configFile.path;
@@ -14,7 +25,10 @@ class Config {
   bool get exists => configFile.existsSync();
 
   void read() {
-    if (!configFile.existsSync()) return;
+    if (!configFile.existsSync()) {
+      _configData = {};
+      return;
+    }
     final configRaw = configFile.readAsStringSync();
     _configData = jsonDecode(configRaw);
   }
@@ -24,22 +38,26 @@ class Config {
   }
 
   void setCacheDirectory(String path) {
-    if (Directory(path).existsSync()) {
-      _configData['cacheDirectory'] = path;
+    final dir = Directory(path);
+    if (dir.existsSync()) {
+      cacheDir.value = dir.path;
+      _configData['cache_directory'] = dir.path;
       save();
     }
   }
 
   void setCacheSize(int size) {
     if (size > 0) {
-      _configData['cacheSize'] = size;
+      cacheSize.value = size;
+      _configData['cache_size'] = size;
       save();
     }
   }
 
-  void setCacheExpiry(int expiry) {
-    if (expiry > 0) {
-      _configData['cacheExpiry'] = expiry;
+  void setCacheExpiry(int days) {
+    if (days > 0) {
+      cacheExpiry.value = days;
+      _configData['cache_expiry_delay'] = days;
       save();
     }
   }

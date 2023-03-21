@@ -6,7 +6,7 @@ import 'package:vrc_config/config.dart';
 class ConfigManager {
   late String _configPath;
 
-  String get defaultConfigPath =>
+  static String get defaultConfigPath =>
       '${Platform.environment['LocalAppData']!}Low/VRChat/vrchat/config.json';
 
   File get configFile => File(_configPath);
@@ -17,9 +17,10 @@ class ConfigManager {
 
   void setConfigPath(String path) {
     _configPath = path;
-    _config.value = Config(File(path));
+    config.value = Config(File(path));
   }
 
-  final Rx<Config> _config = Config(File('')).obs;
-  Rx<Config> get config => _config;
+  void reloadConfig() => config.value = Config(File(_configPath));
+
+  final Rx<Config> config = Config(File('')).obs;
 }
