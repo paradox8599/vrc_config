@@ -25,8 +25,10 @@ class Tr extends Translations {
           'move_cache': '移动缓存',
           'move_cache_confirm': '是否移动缓存文件到新位置？',
           'copied': '已复制到剪贴板',
-          'copy': '复制',
+          'copy_path': '复制路径',
           'no_game': '游戏配置路径不存在',
+          'remaining_available_space': '剩余可用容量',
+          'cache_dir_changed': '缓存目录已更改, 请手动移动或清理旧缓存文件',
         },
         'en': {
           'title': 'VRChat Configs',
@@ -50,8 +52,11 @@ class Tr extends Translations {
           'move_cache': 'Move Cache',
           'move_cache_confirm': 'Do you want to move cache to new location?',
           'copied': 'Copied to clipboard',
-          'copy': 'Copy',
+          'copy_path': 'Copy path',
           'no_game': 'Game config path not found',
+          'remaining_available_space': 'Remaining available space',
+          'cache_dir_changed':
+              'Cache directory has been changed, please move or clear old cache files manually',
         }
       };
 }

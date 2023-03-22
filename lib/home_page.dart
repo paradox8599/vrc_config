@@ -15,6 +15,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Rx<int> turns = 0.obs;
+    Rx<int> cachedSize = 0.obs;
 
     return Scaffold(
       appBar: AppBar(
@@ -93,15 +94,18 @@ class HomePage extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 8.0),
                 ),
                 () {
-                  final sizeDiff = diskSpace.value - config.cacheSize.value;
-                  return Text('($diskSpace GB)',
-                      style: TextStyle(
-                        color: sizeDiff < 10
-                            ? Colors.red
-                            : sizeDiff < config.cacheSize.value * 0.5
-                                ? Colors.yellow
-                                : Colors.black,
-                      ));
+                  final sizeDiff = diskSpace.value -
+                      (config.cacheSize.value - config.dirSize.value);
+                  return Text(
+                    '($diskSpace GB ${'remaining_available_space'.tr})',
+                    style: TextStyle(
+                      color: sizeDiff < 5
+                          ? Colors.red
+                          : sizeDiff < config.cacheSize.value * 0.5
+                              ? Colors.yellow
+                              : Colors.black,
+                    ),
+                  );
                 }()
               ],
             );
@@ -109,13 +113,15 @@ class HomePage extends StatelessWidget {
           trailing: Wrap(
             children: [
               ElevatedButton(
-                child: Text('copy'.tr),
+                child: Text('copy_path'.tr),
                 onPressed: () async {
                   await Clipboard.setData(
                       ClipboardData(text: config.cacheDir.value));
+                  Get.closeCurrentSnackbar();
                   Get.rawSnackbar(
                     title: 'copied'.tr,
                     message: config.cacheDir.value,
+                    duration: const Duration(seconds: 5),
                   );
                 },
               ),
@@ -134,7 +140,9 @@ class HomePage extends StatelessWidget {
 
         ListTile(
           leading: Text('cache_size'.tr),
-          title: Obx(() => Text('${config.cacheSize.value} GB')),
+          title: Obx(
+            () => Text('${config.dirSize} GB / ${config.cacheSize} GB'),
+          ),
           trailing: Wrap(
             children: [
               ElevatedButton(
@@ -192,20 +200,17 @@ class HomePage extends StatelessWidget {
     String? result = await FilePicker.platform.getDirectoryPath();
     if (result == null) return;
     Directory dir = Directory(result);
+    if (Directory(oldPath).path == dir.path) return;
     if (!dir.existsSync()) return;
     config.setCacheDirectory(dir.path);
     // prompt for moving files
-    // TODO: move files
-    // await Get.defaultDialog(
-    //   title: 'move_cache'.tr,
-    //   content: Text('move_cache_confirm'.tr),
-    //   textConfirm: 'move'.tr,
-    //   textCancel: 'cancel'.tr,
-    //   onConfirm: () {
-    //     Get.back();
-    //   },
-    // );
     _getDiskSpace(Get.find(tag: 'diskSpace'));
+    Get.closeCurrentSnackbar();
+    Get.rawSnackbar(
+      title: 'cache_dir_changed'.tr,
+      message: '$oldPath -> ${config.cacheDir.value}',
+      duration: const Duration(seconds: 7),
+    );
   }
 
   Future<void> _getDiskSpace(Rx<int> driveSpace) async {

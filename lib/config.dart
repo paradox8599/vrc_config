@@ -15,6 +15,9 @@ class Config extends GetxController {
   final Rx<int> cacheExpiry = 0.obs;
 
   Config() {
+    cacheDir.listen((value) {
+      getDirSize();
+    });
     read();
   }
 
@@ -70,5 +73,29 @@ class Config extends GetxController {
       _configData['cache_expiry_delay'] = days;
       save();
     }
+  }
+
+  final Rx<int> dirSize = 0.obs;
+  int getDirSize() {
+    int totalSize = 0;
+    var dir = Directory('$cacheDir\\Cache-WindowsPlayer');
+    try {
+      if (dir.existsSync()) {
+        dir
+            .listSync(recursive: true, followLinks: false)
+            .forEach((FileSystemEntity entity) {
+          if (entity is File) {
+            totalSize += entity.lengthSync();
+          }
+        });
+      }
+      // ignore: empty_catches
+    } catch (e) {}
+    dirSize.value = totalSize ~/ 1024 ~/ 1024 ~/ 1024;
+    return totalSize;
+  }
+
+  int get remainingSize {
+    return cacheSize.value - dirSize.value;
   }
 }
